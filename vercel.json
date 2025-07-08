@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "server.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "server.js"
+    }
+  ],
+  "env": {
+    "GEMINI_API_KEY_1": "@gemini-api-key-1",
+    "GEMINI_API_KEY_2": "@gemini-api-key-2",
+    "DEEPSEEK_API_KEY": "@deepseek-api-key"
+  }
+}

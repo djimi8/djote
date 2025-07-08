@@ -6,8 +6,9 @@
   "author": "Law Student Assistant Team",
   "license": "MIT",
   "scripts": {
-    "start": "electron .",
-    "dev": "electron . --env=development",
+    "start": "node server.js",
+    "dev": "node server.js",
+    "electron": "electron .",
     "server": "node server.js",
     "build-win": "electron-builder --win",
     "build-mac": "electron-builder --mac",
@@ -56,6 +57,7 @@
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "body-parser": "^2.2.0",
+    "dotenv": "^17.1.0",
     "express": "^4.18.3"
   },
   "devDependencies": {

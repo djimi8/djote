@@ -3,27 +3,47 @@ const path = require('path');
 const bodyParser = require('body-parser');
 const { getRandomReferences, getResearchTemplate, LEGAL_TERMS } = require('./law-references.js');
 
-const app = express();
-const port = 3000;
+// Load environment variables
+require('dotenv').config();
 
-// قائمة مفاتيح API متعددة مع أنواعها
-const API_KEYS = [
-  {
-    key: 'AIzaSyCBvT5JGz_Fqk66w2MHtzZkqABMgvMhV_k',
+const app = express();
+const port = process.env.PORT || 3000;
+
+// قائمة مفاتيح API متعددة من متغيرات البيئة
+const API_KEYS = [];
+
+// إضافة مفاتيح Gemini من متغيرات البيئة
+if (process.env.GEMINI_API_KEY_1) {
+  API_KEYS.push({
+    key: process.env.GEMINI_API_KEY_1,
     type: 'gemini',
     name: 'Gemini 1'
-  },
-  {
-    key: 'AIzaSyBbwQDlEgXH_Yktzul_1WUiAqHw8hzIkNQ',
+  });
+}
+
+if (process.env.GEMINI_API_KEY_2) {
+  API_KEYS.push({
+    key: process.env.GEMINI_API_KEY_2,
     type: 'gemini',
     name: 'Gemini 2'
-  },
-  {
-    key: 'sk-20ccf1fc0cbd4725ac742ae6e6b56464',
+  });
+}
+
+// إضافة مفتاح DeepSeek من متغيرات البيئة
+if (process.env.DEEPSEEK_API_KEY) {
+  API_KEYS.push({
+    key: process.env.DEEPSEEK_API_KEY,
     type: 'deepseek',
     name: 'DeepSeek Free'
-  }
-];
+  });
+}
+
+// التأكد من وجود مفتاح واحد على الأقل
+if (API_KEYS.length === 0) {
+  console.error('❌ خطأ: لا يوجد مفاتيح API مكونة!');
+  console.error('يرجى إنشاء ملف .env وإضافة مفاتيح API كما هو موضح في .env.example');
+  process.exit(1);
+}
 
 // قائمة النماذج المدعومة
 const SUPPORTED_MODELS = {
