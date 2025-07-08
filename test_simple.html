@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار بسيط</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            direction: rtl;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .success {
+            border-color: #28a745;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔑 اختبار حفظ مفتاح API</h1>
+        
+        <input type="text" id="api-key" placeholder="اكتب أو الصق مفتاح API هنا..." />
+        
+        <div>
+            <button onclick="saveApiKey()">💾 حفظ المفتاح</button>
+            <button onclick="testSavedKey()">🔍 اختبار المفتاح المحفوظ</button>
+            <button onclick="checkStatus()">ℹ️ فحص الحالة</button>
+            <button onclick="clearKey()">🗑️ حذف المفتاح</button>
+        </div>
+        
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        // متغير لحفظ المفتاح
+        let apiKeyGlobal = null;
+
+        // إظهار النتيجة
+        function showResult(message, isSuccess = true) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = message;
+            resultDiv.style.color = isSuccess ? '#28a745' : '#dc3545';
+            console.log(message);
+        }
+
+        // حفظ مفتاح API
+        function saveApiKey() {
+            console.log('=== saveApiKey called ===');
+            const apiKeyInput = document.getElementById('api-key');
+            const apiKey = apiKeyInput.value.trim();
+            
+            if (!apiKey) {
+                showResult('⚠️ الرجاء إدخال مفتاح API', false);
+                return;
+            }
+            
+            // حفظ المفتاح في المتغير العام
+            apiKeyGlobal = apiKey;
+            console.log('API key saved in global variable:', apiKeyGlobal);
+            
+            // محاولة حفظ في localStorage
+            try {
+                localStorage.setItem('gemini_api_key', apiKey);
+                console.log('✅ API key saved in localStorage');
+            } catch (error) {
+                console.warn('localStorage not available:', error);
+            }
+            
+            // تحديث الواجهة
+            apiKeyInput.value = '';
+            apiKeyInput.placeholder = 'تم حفظ المفتاح ✅';
+            apiKeyInput.classList.add('success');
+            
+            showResult('✅ تم حفظ مفتاح API بنجاح!');
+        }
+
+        // الحصول على مفتاح API
+        function getApiKey() {
+            console.log('=== getApiKey called ===');
+            
+            // إذا كان المفتاح محفوظ في المتغير العام
+            if (apiKeyGlobal) {
+                console.log('Key found in global variable');
+                return apiKeyGlobal;
+            }
+            
+            // محاولة الحصول عليه من localStorage
+            try {
+                const key = localStorage.getItem('gemini_api_key');
+                if (key) {
+                    apiKeyGlobal = key; // حفظ في المتغير العام أيضاً
+                    console.log('Key found in localStorage');
+                    return key;
+                }
+            } catch (e) {
+                console.warn('localStorage not accessible:', e);
+            }
+            
+            console.log('No key found');
+            return null;
+        }
+
+        // اختبار المفتاح المحفوظ
+        function testSavedKey() {
+            console.log('=== testSavedKey called ===');
+            const apiKey = getApiKey();
+            
+            if (!apiKey) {
+                showResult('❌ لا يوجد مفتاح محفوظ', false);
+                return;
+            }
+            
+            showResult(`✅ تم العثور على مفتاح محفوظ! الطول: ${apiKey.length} حرف`);
+        }
+
+        // فحص الحالة
+        function checkStatus() {
+            console.log('=== checkStatus called ===');
+            
+            const globalExists = apiKeyGlobal ? true : false;
+            const localExists = localStorage.getItem('gemini_api_key') ? true : false;
+            const finalKey = getApiKey();
+            
+            let message = `📊 تشخيص الحالة:\n`;
+            message += `• متغير عام: ${globalExists ? 'موجود ✅' : 'فارغ ❌'}\n`;
+            message += `• localStorage: ${localExists ? 'موجود ✅' : 'فارغ ❌'}\n`;
+            message += `• النتيجة النهائية: ${finalKey ? 'موجود ✅' : 'فارغ ❌'}`;
+            
+            showResult(message);
+        }
+
+        // حذف المفتاح
+        function clearKey() {
+            console.log('=== clearKey called ===');
+            
+            apiKeyGlobal = null;
+            try {
+                localStorage.removeItem('gemini_api_key');
+            } catch (e) {
+                console.warn('Could not remove from localStorage:', e);
+            }
+            
+            const apiKeyInput = document.getElementById('api-key');
+            apiKeyInput.placeholder = 'اكتب أو الصق مفتاح API هنا...';
+            apiKeyInput.classList.remove('success');
+            
+            showResult('🗑️ تم حذف المفتاح بنجاح');
+        }
+
+        // عند تحميل الصفحة
+        window.onload = function() {
+            console.log('Page loaded');
+            
+            // تحميل المفتاح من localStorage إذا كان موجوداً
+            try {
+                const savedKey = localStorage.getItem('gemini_api_key');
+                if (savedKey) {
+                    apiKeyGlobal = savedKey;
+                    const apiKeyInput = document.getElementById('api-key');
+                    apiKeyInput.placeholder = 'تم حفظ المفتاح مسبقاً ✅';
+                    apiKeyInput.classList.add('success');
+                    showResult('✅ تم تحميل مفتاح محفوظ من localStorage');
+                    console.log('API key loaded from localStorage');
+                } else {
+                    showResult('⚠️ لم يتم العثور على مفتاح محفوظ', false);
+                }
+            } catch (e) {
+                console.warn('Could not load from localStorage:', e);
+                showResult('⚠️ خطأ في تحميل localStorage', false);
+            }
+        }
+    </script>
+</body>
+</html>
