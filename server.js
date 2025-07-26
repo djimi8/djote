@@ -42,7 +42,7 @@ if (process.env.GEMINI_API_KEY_2) {
 // التأكد من وجود مفتاح واحد على الأقل
 if (API_KEYS.length === 0) {
   console.error('🔴 خطأ فادح: لم يتم العثور على مفاتيح API في متغيرات البيئة. يرجى تعيين GEMINI_API_KEY.');
-  // process.exit(1); // In a real deployment, you'd want the app to fail fast.
+  process.exit(1); // In a real deployment, you'd want the app to fail fast.
 }
 
 // قائمة النماذج المدعومة - Gemini فقط
