@@ -423,25 +423,16 @@
         <div class="header">
             <h1>⚖️ مساعد طلبة الحقوق الذكي</h1>
             <p>نظام شامل لمساعدة طلبة الحقوق في الدراسة والبحث والتحضير</p>
-            <div style="background: rgba(40, 167, 69, 0.1); border: 1px solid rgba(40, 167, 69, 0.3); border-radius: 10px; padding: 15px; margin-top: 20px; position: relative; z-index: 1;">
-                <div style="display: flex; align-items: center; gap: 10px; color: #28a745; font-weight: 600;">
-                    <span style="font-size: 1.2em;">✅</span>
-                    <span>النظام جاهز للاستخدام - مفتاح API مفعل</span>
-                </div>
-                <p style="font-size: 14px; color: #6c757d; margin: 5px 0 0 0;">يمكنك الآن استخدام جميع الميزات دون الحاجة لإعداد إضافي</p>
-            </div>
-                <p style="font-size: 14px; color: #6c757d; margin: 5px 0 0 0;">يمكنك الآن استخدام جميع الميزات دون الحاجة لإعداد إضافي</p>
-            </div>
-            
-            <!-- قسم إعداد مفتاح API - مخفي للأمان -->
-            <div class="api-key-section" style="display: none;">
-                <h4>🔑 إعداد مفتاح API للذكاء الاصطناعي</h4>
+            <!-- قسم إعداد مفتاح API - مطلوب للاستخدام -->
+            <div class="api-key-section" style="display: block;">
+                <h4>🔑 إعداد مفتاح Gemini API (مطلوب)</h4>
                 <p style="font-size: 14px; color: #6c757d;">للحصول على مفتاح مجاني من Google AI Studio: <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: #007bff;">اضغط هنا</a></p>
+                <p style="font-size: 12px; color: #dc3545; margin: 5px 0;">⚠️ يجب إدخال مفتاح Gemini API لاستخدام التطبيق</p>
                 <p style="font-size: 12px; color: #28a745; margin: 5px 0;">💡 نصيحة: بعد نسخ المفتاح من Google، استخدم زر 📋 أو Ctrl+V للصق</p>
                 <p style="font-size: 11px; color: #6c757d; margin: 5px 0;">🔍 للتشخيص: استخدم زر "فحص الحالة" للتأكد من حفظ المفتاح</p>
                 <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                     <div style="flex: 1; min-width: 200px; position: relative;">
-                        <input type="text" id="api-key" placeholder="اكتب أو الصق مفتاح API هنا..." style="width: 100% !important; padding: 12px 80px 12px 12px !important; box-sizing: border-box !important; border: 1px solid #ddd !important; border-radius: 5px !important; font-size: 14px !important; outline: none !important; margin: 0 !important;" />
+                        <input type="text" id="api-key" placeholder="اكتب أو الصق مفتاح Gemini API هنا..." style="width: 100% !important; padding: 12px 80px 12px 12px !important; box-sizing: border-box !important; border: 1px solid #ddd !important; border-radius: 5px !important; font-size: 14px !important; outline: none !important; margin: 0 !important;" />
                         <button onclick="pasteApiKey()" style="position: absolute; right: 40px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 14px; color: #007bff; z-index: 10;" title="لصق من الحافظة">📋</button>
                         <button onclick="togglePasswordVisibility()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 16px; z-index: 10;" title="إظهار/إخفاء المفتاح">👁️</button>
                     </div>
@@ -450,7 +441,7 @@
                     <button onclick="checkApiKeyStatus()" style="white-space: nowrap; background: #17a2b8;">ℹ️ فحص الحالة</button>
                     <button onclick="clearApiKey()" style="white-space: nowrap; background: #dc3545;">🗑️ حذف</button>
                 </div>
-                <p style="font-size: 12px; color: #6c757d; margin-top: 10px;">المفتاح يُحفظ محلياً في متصفحك فقط ولا يُرسل لأي خادم</p>
+                <p style="font-size: 12px; color: #6c757d; margin-top: 10px;">مفتاح Gemini API يُحفظ محلياً في متصفحك فقط ولا يُرسل لأي خادم</p>
                 <div id="api-status" style="margin-top: 10px; padding: 10px; border-radius: 5px; display: none;"></div>
                 <div id="debug-info" style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 5px; font-size: 11px; color: #6c757d; display: none;">
                     <strong>معلومات التشخيص:</strong>
@@ -648,8 +639,8 @@
         let currentTab = 'research';
         let backupApiKey = null; // نسخة احتياطية من المفتاح في حالة فشل localStorage
 
-        // متغير لحفظ المفتاح - مضمن للأمان
-        let apiKeyGlobal = 'AIzaSyAr2FfARE_lCHpk3aZr4qCOyKQOgCrcZgA';
+        // متغير لحفظ المفتاح - يحتاج المستخدم لإدخاله
+        let apiKeyGlobal = null;
 
         // حفظ مفتاح API
         function saveApiKey() {
@@ -657,7 +648,7 @@
             const apiKey = apiKeyInput.value.trim();
             
             if (!apiKey) {
-                alert('⚠️ الرجاء إدخال مفتاح API');
+                alert('⚠️ الرجاء إدخال مفتاح Gemini API');
                 return;
             }
             
@@ -682,14 +673,24 @@
             apiKeyInput.placeholder = 'تم حفظ المفتاح ✅';
             apiKeyInput.style.borderColor = '#28a745';
             
-            alert('✅ تم حفظ مفتاح API بنجاح!');
-            console.log('✅ API key saved successfully');
+            alert('✅ تم حفظ مفتاح Gemini API بنجاح!\n\nيمكنك الآن استخدام جميع ميزات التطبيق');
+            console.log('✅ Gemini API key saved successfully');
         }
 
         // الحصول على مفتاح API
         function getApiKey() {
-            // إرجاع المفتاح المضمن في الكود
-            return apiKeyGlobal;
+            // أولاً، جرب الحصول على المفتاح من localStorage
+            try {
+                const storedKey = localStorage.getItem('gemini_api_key');
+                if (storedKey && storedKey.trim() !== '') {
+                    return storedKey.trim();
+                }
+            } catch (error) {
+                console.warn('localStorage not available:', error);
+            }
+            
+            // إذا لم يكن هناك مفتاح في localStorage، استخدم المتغير العام
+            return apiKeyGlobal && apiKeyGlobal.trim() !== '' ? apiKeyGlobal.trim() : null;
         }
 
         // اختبار مفتاح API
@@ -697,11 +698,11 @@
             const apiKey = getApiKey();
             
             if (!apiKey) {
-                alert('❌ لا يوجد مفتاح محفوظ للاختبار');
+                alert('❌ لا يوجد مفتاح Gemini API محفوظ للاختبار');
                 return;
             }
             
-            alert('⏳ جاري اختبار مفتاح API...');
+            alert('⏳ جاري اختبار مفتاح Gemini API...');
             
             try {
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
@@ -723,9 +724,9 @@
                 });
                 
                 if (response.ok) {
-                    alert('✅ مفتاح API يعمل بشكل صحيح!');
+                    alert('✅ مفتاح Gemini API يعمل بشكل صحيح!');
                 } else {
-                    alert('❌ خطأ في مفتاح API - تحقق من صحة المفتاح');
+                    alert('❌ خطأ في مفتاح Gemini API - تحقق من صحة المفتاح');
                 }
                 
             } catch (error) {
@@ -748,10 +749,11 @@
                 
                 // تحديث الواجهة
                 const apiKeyInput = document.getElementById('api-key');
-                apiKeyInput.placeholder = 'اكتب أو الصق مفتاح API هنا...';
+                apiKeyInput.value = '';
+                apiKeyInput.placeholder = 'اكتب أو الصق مفتاح Gemini API هنا...';
                 apiKeyInput.style.borderColor = '#e9ecef';
                 
-                alert('🗑️ تم حذف المفتاح بنجاح');
+                alert('🗑️ تم حذف المفتاح بنجاح\n\nستحتاج إلى إدخال مفتاح جديد لاستخدام التطبيق');
             }
         }
 
@@ -764,7 +766,7 @@
             const apiKey = getApiKey();
             
             if (!apiKey) {
-                alert('❌ لا يوجد مفتاح محفوظ\n\nحالة التشخيص:\n- متغير عام: ' + (apiKeyGlobal ? 'موجود' : 'فارغ') + '\n- localStorage: ' + (localStorage.getItem('gemini_api_key') ? 'موجود' : 'فارغ'));
+                alert('❌ لا يوجد مفتاح Gemini API محفوظ\n\nحالة التشخيص:\n- متغير عام: ' + (apiKeyGlobal ? 'موجود' : 'فارغ') + '\n- localStorage: ' + (localStorage.getItem('gemini_api_key') ? 'موجود' : 'فارغ') + '\n\nيرجى إدخال مفتاح Gemini API من Google AI Studio');
                 return;
             }
             
@@ -774,9 +776,9 @@
             message += `النهاية: ...${apiKey.substring(apiKey.length - 5)}`;
             
             if (apiKey.startsWith('AIza')) {
-                message += '\n\n✅ تنسيق المفتاح صحيح';
+                message += '\n\n✅ تنسيق مفتاح Gemini API صحيح';
             } else {
-                message += '\n\n⚠️ تنسيق المفتاح قد يكون خاطئ';
+                message += '\n\n⚠️ تنسيق مفتاح Gemini API قد يكون خاطئ (يجب أن يبدأ بـ AIza)';
             }
             
             alert(message);
@@ -873,7 +875,8 @@
         // عند تحميل الصفحة
         window.onload = function() {
             console.log('Page loaded');
-            console.log('API key ready: ' + (apiKeyGlobal ? 'YES' : 'NO'));
+            console.log('Gemini API key ready: ' + (getApiKey() ? 'YES' : 'NO'));
+            console.log('User must enter Gemini API key to use the application');
             
             // تهيئة معالجات الأحداث
             initializeEventHandlers();
@@ -906,7 +909,7 @@
             // عرض نصائح عند التركيز على الحقل
             apiKeyInput.addEventListener('focus', function() {
                 if (!this.value.trim()) {
-                    showApiStatus('💡 يمكنك لصق المفتاح باستخدام زر 📋 أو Ctrl+V', 'info');
+                    showApiStatus('💡 يمكنك لصق مفتاح Gemini API باستخدام زر 📋 أو Ctrl+V', 'info');
                 }
             });
 
@@ -987,7 +990,7 @@
             const apiKey = getApiKey();
             console.log('Calling Gemini API, key exists:', !!apiKey);
             if (!apiKey || apiKey.trim() === '') {
-                throw new Error('🔑 الرجاء إدخال مفتاح API أولاً من القسم أعلى الصفحة.\n\nإذا كنت قد أدخلته بالفعل، جرب:\n1. إعادة تحميل الصفحة\n2. إعادة إدخال المفتاح\n3. التأكد من عدم وجود مسافات إضافية');
+                throw new Error('🔑 الرجاء إدخال مفتاح Gemini API أولاً من القسم أعلى الصفحة.\n\nإذا كنت قد أدخلته بالفعل، جرب:\n1. إعادة تحميل الصفحة\n2. إعادة إدخال المفتاح\n3. التأكد من عدم وجود مسافات إضافية\n4. استخدام زر "🔍 فحص الحالة" للتأكد من حفظ المفتاح');
             }
 
             try {
@@ -1022,12 +1025,12 @@
                     
                     if (response.status === 400) {
                         if (errorData.error?.message?.includes('API key')) {
-                            errorMessage = 'مفتاح API غير صحيح أو غير مفعل';
+                            errorMessage = 'مفتاح Gemini API غير صحيح أو غير مفعل';
                         } else {
-                            errorMessage = 'طلب غير صالح - تحقق من مفتاح API';
+                            errorMessage = 'طلب غير صالح - تحقق من مفتاح Gemini API';
                         }
                     } else if (response.status === 403) {
-                        errorMessage = 'مفتاح API غير مفعل أو ليس لديك صلاحية لاستخدام Gemini';
+                        errorMessage = 'مفتاح Gemini API غير مفعل أو ليس لديك صلاحية لاستخدام Gemini';
                     } else if (response.status === 429) {
                         errorMessage = 'تم تجاوز حد الاستخدام، حاول مرة أخرى لاحقاً';
                     } else if (response.status === 500) {
@@ -1040,7 +1043,7 @@
                 const data = await response.json();
                 
                 if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
-                    throw new Error('⚠️ لم يتم الحصول على استجابة صالحة من API');
+                    throw new Error('⚠️ لم يتم الحصول على استجابة صالحة من Gemini API');
                 }
 
                 return data.candidates[0].content.parts[0].text;
@@ -1065,7 +1068,7 @@
             });
             
             if (!apiKey) {
-                alert('❌ لم يتم العثور على مفتاح API!\n\nيرجى إدخال المفتاح في الحقل أعلاه وحفظه أولاً.');
+                alert('❌ لم يتم العثور على مفتاح API!\n\nيرجى:\n1. الحصول على مفتاح من Google AI Studio\n2. إدخال المفتاح في الحقل أعلاه\n3. حفظه باستخدام زر "💾 حفظ المفتاح"');
                 return;
             }
             
@@ -1114,7 +1117,7 @@
                     <div class="error">
                         <h4>حدث خطأ أثناء إنشاء البحث</h4>
                         <p>${error.message}</p>
-                        <p>تأكد من صحة مفتاح API وحاول مرة أخرى.</p>
+                        <p>تأكد من صحة مفتاح Gemini API وحاول مرة أخرى.</p>
                     </div>
                 `;
             } finally {
@@ -1218,6 +1221,7 @@ ${level === 'مبسط' ? '- استخدم لغة بسيطة وواضحة\n- تج�
                     <div class="error">
                         <h4>حدث خطأ أثناء إنشاء التلخيص</h4>
                         <p>${error.message}</p>
+                        <p>تأكد من صحة مفتاح Gemini API وحاول مرة أخرى.</p>
                     </div>
                 `;
             } finally {
@@ -1361,6 +1365,7 @@ ${specificInstructions}
                     <div class="error">
                         <h4>حدث خطأ أثناء إنشاء التحضير</h4>
                         <p>${error.message}</p>
+                        <p>تأكد من صحة مفتاح Gemini API وحاول مرة أخرى.</p>
                     </div>
                 `;
             } finally {

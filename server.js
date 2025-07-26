@@ -29,23 +29,14 @@ if (process.env.GEMINI_API_KEY_2) {
   });
 }
 
-// إضافة مفتاح DeepSeek من متغيرات البيئة
-if (process.env.DEEPSEEK_API_KEY) {
-  API_KEYS.push({
-    key: process.env.DEEPSEEK_API_KEY,
-    type: 'deepseek',
-    name: 'DeepSeek Free'
-  });
-}
+// إزالة دعم DeepSeek - التطبيق سيستخدم Gemini فقط
 
-// التأكد من وجود مفتاح واحد على الأقل
+// التأكد من وجود مفتاح واحد على الأقل - تم إزالة هذا التحقق ليتم إدخال المفتاح من الواجهة
 if (API_KEYS.length === 0) {
-  console.error('❌ خطأ: لا يوجد مفاتيح API مكونة!');
-  console.error('يرجى إنشاء ملف .env وإضافة مفاتيح API كما هو موضح في .env.example');
-  process.exit(1);
+  console.log('⚠️ لا يوجد مفاتيح API مكونة في المتغيرات البيئية - سيتم استخدام المفتاح من الواجهة');
 }
 
-// قائمة النماذج المدعومة
+// قائمة النماذج المدعومة - Gemini فقط
 const SUPPORTED_MODELS = {
   'gemini-2.0-flash': {
     provider: 'gemini',
@@ -56,18 +47,6 @@ const SUPPORTED_MODELS = {
   'gemini-1.5-flash': {
     provider: 'gemini', 
     name: 'Gemini 1.5 Flash',
-    maxTokens: 4000,
-    free: true
-  },
-  'deepseek-chat': {
-    provider: 'deepseek',
-    name: 'DeepSeek Chat',
-    maxTokens: 4000,
-    free: true
-  },
-  'deepseek-coder': {
-    provider: 'deepseek',
-    name: 'DeepSeek Coder',
     maxTokens: 4000,
     free: true
   }
@@ -145,10 +124,8 @@ function buildAPIURL(keyObj, modelName) {
   switch (keyObj.type) {
     case 'gemini':
       return `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${keyObj.key}`;
-    case 'deepseek':
-      return 'https://api.deepseek.com/chat/completions';
     default:
-      throw new Error(`نوع API غير مدعوم: ${keyObj.type}`);
+      throw new Error(`نوع API غير مدعوم: ${keyObj.type}. يدعم التطبيق Gemini فقط.`);
   }
 }
 
@@ -223,18 +200,16 @@ app.post('/research', async (req, res) => {
       await new Promise(resolve => setTimeout(resolve, 2000)); // انتظار ثانيتين
       requestCount = Math.floor(requestCount / 2); // تقليل المعداد
     }
-    const { prompt, type = 'simple', selectedModel = 'gemini-2.0-flash' } = req.body;
+    const { prompt, type = 'simple', selectedModel = 'gemini-2.0-flash', apiKey } = req.body;
     
     // Enhanced prompt for better academic results based on selected model
     let enhancedPrompt = prompt;
     
-    // تحسين النص حسب النموذج المحدد
-    if (selectedModel.includes('deepseek-coder')) {
-      enhancedPrompt = `كخبير في كتابة الأبحاث القانونية المنظمة والمهيكلة بشكل احترافي، ${enhancedPrompt}`;
-    } else if (selectedModel.includes('deepseek')) {
-      enhancedPrompt = `كخبير قانوني أكاديمي متمرس في التحليل العميق والدقيق، ${enhancedPrompt}`;
-    } else if (selectedModel.includes('gemini-2.0')) {
+    // تحسين النص حسب النموذج المحدد - Gemini فقط
+    if (selectedModel.includes('gemini-2.0')) {
       enhancedPrompt = `باستخدام أحدث معايير البحث القانوني والأكاديمي، ${enhancedPrompt}`;
+    } else if (selectedModel.includes('gemini')) {
+      enhancedPrompt = `كخبير قانوني أكاديمي متمرس في التحليل العميق والدقيق، ${enhancedPrompt}`;
     }
     
     if (type === 'academic') {
@@ -317,38 +292,34 @@ ${prompt}
     
     console.log(`إرسال طلب البحث باستخدام النموذج: ${selectedModel}`);
     
-    let response;
-    let attempt = 0;
-    const maxAttempts = API_KEYS.length * 2; // جرب كل مفتاح مرتين
+    // التحقق من توافق النموذج قبل البدء
+    const model = SUPPORTED_MODELS[selectedModel];
+    if (!model) {
+      throw new Error(`النموذج ${selectedModel} غير مدعوم`);
+    }
     
-    while (attempt < maxAttempts) {
+    // الحصول على المفتاح المناسب للنموذج
+    let keyObj;
+    
+    // إذا كان المستخدم أرسل مفتاح API، استخدمه
+    if (apiKey && apiKey.trim()) {
+      keyObj = {
+        key: apiKey.trim(),
+        type: 'gemini',
+        name: 'User Provided Key'
+      };
+      console.log('استخدام مفتاح API المقدم من المستخدم');
+    } else {
+      // جرب الحصول على مفتاح من المتغيرات البيئية
       try {
-        // زيادة المحاولة في بداية كل دورة لضمان التوقف
-        attempt++;
-        console.log(`محاولة رقم ${attempt} من ${maxAttempts}`);
-        
-        // التحقق من توافق النموذج قبل البدء
-        const model = SUPPORTED_MODELS[selectedModel];
-        if (!model) {
-          throw new Error(`النموذج ${selectedModel} غير مدعوم`);
-        }
-        
-        // الحصول على المفتاح المناسب للنموذج
-        let keyObj;
-        try {
-          keyObj = getAPIKeyForModel(selectedModel);
-        } catch (keyError) {
-          console.log(`❌ ${keyError.message}`);
-          
-          // إذا كان النموذج DeepSeek ولا يوجد مفتاح متاح، استخدم Gemini كبديل
-          if (selectedModel.includes('deepseek')) {
-            console.log('🔄 تبديل إلى Gemini كبديل...');
-            selectedModel = 'gemini-2.0-flash';
-            keyObj = getAPIKeyForModel(selectedModel);
-          } else {
-            throw keyError;
-          }
-        }
+        keyObj = getAPIKeyForModel(selectedModel);
+      } catch (keyError) {
+        console.log(`❌ ${keyError.message}`);
+        throw new Error('لا يوجد مفتاح Gemini API متاح. يرجى إدخال مفتاح من الواجهة أو إعداد متغيرات البيئة.');
+      }
+    }
+    
+    try {
         
         const apiUrl = buildAPIURL(keyObj, selectedModel);
         console.log(`🔑 استخدام ${keyObj.name} للنموذج ${selectedModel}`);
@@ -395,169 +366,79 @@ ${prompt}
               }
             ]
           };
-        } else if (keyObj.type === 'deepseek') {
-          headers['Authorization'] = `Bearer ${keyObj.key}`;
-          
-          // تحديد النموذج المناسب لـ DeepSeek
-          let actualModel = selectedModel;
-          if (selectedModel === 'deepseek-chat') {
-            actualModel = 'deepseek-chat';
-          } else if (selectedModel === 'deepseek-coder') {
-            actualModel = 'deepseek-coder';
-          }
-          
-          requestBody = {
-            model: actualModel,
-            messages: [
-              {
-                role: "user",
-                content: enhancedPrompt
-              }
-            ],
-            temperature: RESEARCH_CONFIG.temperature,
-            max_tokens: RESEARCH_CONFIG.maxTokens,
-            top_p: RESEARCH_CONFIG.topP,
-            stream: false
-          };
+        } else {
+          throw new Error(`نوع API غير مدعوم: ${keyObj.type}. يدعم التطبيق Gemini فقط.`);
         }
         
-        // إضافة timeout للطلب
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
-        
-        response = await fetch(apiUrl, {
+        // إرسال الطلب
+        const response = await fetch(apiUrl, {
           method: 'POST',
           headers: headers,
-          body: JSON.stringify(requestBody),
-          signal: controller.signal
+          body: JSON.stringify(requestBody)
         });
         
-        clearTimeout(timeoutId);
+        console.log(`✅ تم إرسال الطلب باستخدام ${keyObj.name}`);
         
-        // إذا نجح الطلب، اخرج من الحلقة
-        if (response.ok) {
-          console.log(`✅ نجح الطلب باستخدام ${keyObj.name} في المحاولة ${attempt}`);
-          break;
-        } else {
-          // فشل الطلب، سجل الفشل
-          keyFailureCount[currentKeyIndex]++;
-          console.log(`❌ فشل ${keyObj.name}: ${response.status} - المحاولة ${attempt}`);
+       // معالجة الاستجابة
+         if (!response.ok) {
+          const errorText = await response.text();
+          console.error('خطأ من Gemini API:', response.status, errorText);
           
-          // إذا كانت هذه المحاولة الأخيرة، توقف
-          if (attempt >= maxAttempts) {
-            console.log('🔴 تم الوصول للحد الأقصى من المحاولات');
-            break;
+          let errorMessage = 'خطأ غير معروف من Gemini API';
+          
+          if (response.status === 400) {
+            errorMessage = 'البيانات المرسلة غير صحيحة. تحقق من المدخلات.';
+          } else if (response.status === 401) {
+            errorMessage = 'خطأ في مفتاح API. تحقق من صحة المفتاح.';
+          } else if (response.status === 403) {
+            errorMessage = 'تم تجاوز الحصة اليومية لـ API. الرجاء المحاولة غداً أو استخدام مفتاح آخر.';
+          } else if (response.status === 429) {
+            errorMessage = 'طلبات كثيرة جداً. انتظر دقيقة واحدة.';
           }
           
-          // انتظار قصير قبل المحاولة التالية
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          throw new Error(errorMessage);
         }
         
-      } catch (fetchError) {
-        keyFailureCount[currentKeyIndex]++;
-        console.log(`💥 خطأ في المحاولة ${attempt}:`, fetchError.message);
+        const data = await response.json();
+        console.log('استلام استجابة من API');
         
-        // إذا كانت هذه المحاولة الأخيرة، اخرج من الحلقة
-        if (attempt >= maxAttempts) {
-          console.log('🔴 تم الوصول للحد الأقصى من المحاولات بسبب خطأ');
-          throw fetchError;
+        // استخراج النص من استجابة Gemini
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!text) {
+          console.error('استجابة Gemini فارغة:', JSON.stringify(data, null, 2));
+          throw new Error('لم يتم العثور على نص في استجابة Gemini');
         }
         
-        // انتظار قبل المحاولة التالية
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      }
-    }
-    
-    // تأكيد أن الحلقة انتهت
-    console.log(`🏁 انتهت الحلقة بعد ${attempt} محاولات`);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('خطأ من Gemini API:', response.status, errorText);
-      
-      let errorMessage = 'خطأ غير معروف من Gemini API';
-      let errorType = 'خطأ API';
-      
-      try {
-        const errorData = JSON.parse(errorText);
-        errorMessage = errorData.error?.message || errorMessage;
+        // تنسيق النص
+        const formattedText = formatAcademicResponse(text, type);
         
-        // تحديد نوع الخطأ بناءً على رمز الحالة
-        if (response.status === 400) {
-          errorType = 'طلب غير صحيح';
-          errorMessage = 'البيانات المرسلة غير صحيحة. تحقق من المدخلات.';
-        } else if (response.status === 401) {
-          errorType = 'مشكلة المصادقة';
-          errorMessage = 'خطأ في مفتاح API. تحقق من صحة المفتاح.';
-        } else if (response.status === 403) {
-          errorType = 'تجاوز حصة API';
-          errorMessage = 'تم تجاوز الحصة اليومية لـ API. الرجاء المحاولة غداً أو استخدام مفتاح آخر.';
-          // إعادة تعيين كاملة للمعداد
-          requestCount = 0;
-        } else if (response.status === 429) {
-          errorType = 'طلبات كثيرة';
-          errorMessage = 'طلبات كثيرة جداً. انتظر دقيقة واحدة.';
-          // تقليل المعداد
-          requestCount = Math.max(0, requestCount - 10);
-        } else if (response.status >= 500) {
-          errorType = 'خطأ الخادم';
-          errorMessage = 'خطأ في خادم Google. حاول مرة أخرى.';
-        }
-      } catch (parseError) {
-        console.error('خطأ في تحليل رسالة الخطأ:', parseError);
+        // تنظيف المهلة الزمنية عند النجاح
+        clearTimeout(requestTimeout);
+        
+        res.json({
+          research: formattedText,
+          metadata: {
+            type: type,
+            timestamp: new Date().toISOString(),
+            wordCount: text.split(' ').length,
+            processing_time: Date.now(),
+            model_used: selectedModel
+          }
+        });
+        
+      } catch (error) {
+        console.error('خطأ في البحث:', error);
+        
+        // تنظيف المهلة الزمنية عند الخطأ
+        clearTimeout(requestTimeout);
+        
+        res.status(500).json({
+          error: {
+            message: error.message,
+            type: 'خطأ في المعالجة'
+          }
+        });
       }
-      
-      return res.status(500).json({
-        error: {
-          message: errorMessage,
-          type: errorType,
-          status: response.status,
-          suggestion: getErrorSuggestion(response.status)
-        }
-      });
-    }
-    
-    const data = await response.json();
-    console.log('استلام استجابة من API');
-    
-    let text;
-    const keyObj = API_KEYS[currentKeyIndex];
-    
-    // استخراج النص حسب نوع API
-    if (keyObj.type === 'gemini') {
-      text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!text) {
-        console.error('استجابة Gemini فارغة:', JSON.stringify(data, null, 2));
-        throw new Error('لم يتم العثور على نص في استجابة Gemini');
-      }
-    } else if (keyObj.type === 'deepseek') {
-      text = data.choices?.[0]?.message?.content;
-      if (!text) {
-        console.error('استجابة DeepSeek فارغة:', JSON.stringify(data, null, 2));
-        throw new Error('لم يتم العثور على نص في استجابة DeepSeek');
-      }
-    } else {
-      throw new Error('نوع API غير مدعوم لاستخراج النص');
-    }
-    
-    // Post-process the response for better formatting
-    const formattedText = formatAcademicResponse(text, type);
-    
-    // تنظيف المهلة الزمنية عند النجاح
-    clearTimeout(requestTimeout);
-    
-    res.json({
-      research: formattedText,
-      metadata: {
-        type: type,
-        timestamp: new Date().toISOString(),
-        wordCount: text.split(' ').length,
-        processing_time: Date.now(),
-        model_used: selectedModel,
-        attempts_made: attempt
-      }
-    });
-    
   } catch (error) {
     console.error('خطأ في البحث:', error);
     
