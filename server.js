@@ -13,6 +13,14 @@ const port = process.env.PORT || 3000;
 const API_KEYS = [];
 
 // إضافة مفاتيح Gemini من متغيرات البيئة
+if (process.env.GEMINI_API_KEY) {
+  API_KEYS.push({
+    key: process.env.GEMINI_API_KEY,
+    type: 'gemini',
+    name: 'Gemini'
+  });
+}
+
 if (process.env.GEMINI_API_KEY_1) {
   API_KEYS.push({
     key: process.env.GEMINI_API_KEY_1,
@@ -31,9 +39,10 @@ if (process.env.GEMINI_API_KEY_2) {
 
 // إزالة دعم DeepSeek - التطبيق سيستخدم Gemini فقط
 
-// التأكد من وجود مفتاح واحد على الأقل - تم إزالة هذا التحقق ليتم إدخال المفتاح من الواجهة
+// التأكد من وجود مفتاح واحد على الأقل
 if (API_KEYS.length === 0) {
-  console.log('⚠️ لا يوجد مفاتيح API مكونة في المتغيرات البيئية - سيتم استخدام المفتاح من الواجهة');
+  console.error('🔴 خطأ فادح: لم يتم العثور على مفاتيح API في متغيرات البيئة. يرجى تعيين GEMINI_API_KEY.');
+  // process.exit(1); // In a real deployment, you'd want the app to fail fast.
 }
 
 // قائمة النماذج المدعومة - Gemini فقط
@@ -301,22 +310,13 @@ ${prompt}
     // الحصول على المفتاح المناسب للنموذج
     let keyObj;
     
-    // إذا كان المستخدم أرسل مفتاح API، استخدمه
-    if (apiKey && apiKey.trim()) {
-      keyObj = {
-        key: apiKey.trim(),
-        type: 'gemini',
-        name: 'User Provided Key'
-      };
-      console.log('استخدام مفتاح API المقدم من المستخدم');
-    } else {
-      // جرب الحصول على مفتاح من المتغيرات البيئية
-      try {
-        keyObj = getAPIKeyForModel(selectedModel);
-      } catch (keyError) {
-        console.log(`❌ ${keyError.message}`);
-        throw new Error('لا يوجد مفتاح Gemini API متاح. يرجى إدخال مفتاح من الواجهة أو إعداد متغيرات البيئة.');
-      }
+    // في البيئة المنشورة، يجب أن يأتي المفتاح دائمًا من متغيرات البيئة
+    try {
+      keyObj = getAPIKeyForModel(selectedModel);
+    } catch (keyError) {
+      console.log(`❌ ${keyError.message}`);
+      // This error will be caught and sent as a 500 response
+      throw new Error('لا يوجد مفتاح Gemini API صالح متاح في متغيرات البيئة على الخادم.');
     }
     
     try {
