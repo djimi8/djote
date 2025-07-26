@@ -861,13 +861,7 @@
                     document.getElementById('ai-model-select').value = selectedModel;
                 }
                 
-                const apiKey = getGeminiKey();
-                
-                if (!apiKey) {
-                    throw new Error('لم يتم العثور على مفتاح Gemini API. يرجى إدخال المفتاح أولاً.');
-                }
-                
-                const response = await fetch('http://localhost:3000/research', {
+                const response = await fetch('/research', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -875,8 +869,7 @@
                     body: JSON.stringify({ 
                         prompt: prompt,
                         type: 'academic',
-                        selectedModel: selectedModel,
-                        apiKey: apiKey
+                        selectedModel: selectedModel
                     })
                 });
                 
@@ -1109,22 +1102,16 @@ ${keyStatsText}
             generateBtn.textContent = 'جاري البحث...';
 
             try {
-                const apiKey = getGeminiKey();
                 const selectedModel = document.getElementById('ai-model-select').value;
                 
-                if (!apiKey) {
-                    throw new Error('لم يتم العثور على مفتاح Gemini API. يرجى إدخال المفتاح أولاً.');
-                }
-                
-                const response = await fetch('http://localhost:3000/research', {
+                const response = await fetch('/research', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({ 
                         prompt: query,
-                        selectedModel: selectedModel,
-                        apiKey: apiKey
+                        selectedModel: selectedModel
                     })
                 });
                 
@@ -1290,14 +1277,9 @@ ${keyStatsText}
             try {
                 const prompt = createSummaryPrompt(subject, content, summaryType, summaryLevel);
                 
-                const apiKey = getGeminiKey();
                 const selectedModel = document.getElementById('ai-model-select').value;
                 
-                if (!apiKey) {
-                    throw new Error('لم يتم العثور على مفتاح Gemini API. يرجى إدخال المفتاح أولاً.');
-                }
-                
-                const response = await fetch('http://localhost:3000/research', {
+                const response = await fetch('/research', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -1305,8 +1287,7 @@ ${keyStatsText}
                     body: JSON.stringify({ 
                         prompt: prompt,
                         type: 'summary',
-                        selectedModel: selectedModel,
-                        apiKey: apiKey
+                        selectedModel: selectedModel
                     })
                 });
 
@@ -1410,14 +1391,9 @@ ${summaryLevel === 'مبسط' ? '- استخدم لغة بسيطة وواضحة\n
             try {
                 const prompt = createPreparationPrompt(title, field, prepType);
                 
-                const apiKey = getGeminiKey();
                 const selectedModel = document.getElementById('ai-model-select').value;
                 
-                if (!apiKey) {
-                    throw new Error('لم يتم العثور على مفتاح Gemini API. يرجى إدخال المفتاح أولاً.');
-                }
-                
-                const response = await fetch('http://localhost:3000/research', {
+                const response = await fetch('/research', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -1425,8 +1401,7 @@ ${summaryLevel === 'مبسط' ? '- استخدم لغة بسيطة وواضحة\n
                     body: JSON.stringify({ 
                         prompt: prompt,
                         type: 'preparation',
-                        selectedModel: selectedModel,
-                        apiKey: apiKey
+                        selectedModel: selectedModel
                     })
                 });
 
@@ -1741,14 +1716,9 @@ ${summaryLevel === 'مبسط' ? '- استخدم لغة بسيطة وواضحة\n
             try {
                 const prompt = createQuizPrompt(subject, difficulty, count, type, topic);
                 
-                const apiKey = getGeminiKey();
                 const selectedModel = document.getElementById('ai-model-select').value;
                 
-                if (!apiKey) {
-                    throw new Error('لم يتم العثور على مفتاح Gemini API. يرجى إدخال المفتاح أولاً.');
-                }
-                
-                const response = await fetch('http://localhost:3000/research', {
+                const response = await fetch('/research', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -1756,8 +1726,7 @@ ${summaryLevel === 'مبسط' ? '- استخدم لغة بسيطة وواضحة\n
                     body: JSON.stringify({ 
                         prompt: prompt,
                         type: 'quiz',
-                        selectedModel: selectedModel,
-                        apiKey: apiKey
+                        selectedModel: selectedModel
                     })
                 });
 
@@ -2097,91 +2066,7 @@ ${summaryLevel === 'مبسط' ? '- استخدم لغة بسيطة وواضحة\n
             printWindow.print();
         }
         
-        // وظائف إدارة مفتاح Gemini API
-        function saveGeminiKey() {
-            const apiKeyInput = document.getElementById('gemini-api-key');
-            const apiKey = apiKeyInput.value.trim();
-            
-            if (!apiKey) {
-                alert('⚠️ الرجاء إدخال مفتاح Gemini API');
-                return;
-            }
-            
-            // حفظ المفتاح في localStorage
-            localStorage.setItem('gemini_api_key', apiKey);
-            
-            // تنظيف الحقل وإظهار رسالة النجاح
-            apiKeyInput.value = '';
-            apiKeyInput.style.borderColor = '#28a745';
-            alert('✅ تم حفظ مفتاح Gemini API بنجاح!\n\nيمكنك الآن استخدام جميع ميزات التطبيق');
-        }
-        
-        function getGeminiKey() {
-            return localStorage.getItem('gemini_api_key');
-        }
-        
-        async function testGeminiKey() {
-            const apiKey = getGeminiKey();
-            
-            if (!apiKey) {
-                alert('❌ لا يوجد مفتاح Gemini API محفوظ للاختبار');
-                return;
-            }
-            
-            try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [{
-                                text: 'قل مرحبا'
-                            }]
-                        }]
-                    })
-                });
-                
-                if (response.ok) {
-                    alert('✅ مفتاح Gemini API يعمل بشكل صحيح!');
-                } else {
-                    alert('❌ خطأ في مفتاح Gemini API - تحقق من صحة المفتاح');
-                }
-                
-            } catch (error) {
-                alert('❌ خطأ في الاتصال: ' + error.message);
-            }
-        }
-        
-        // تحديث دوال إرسال الطلبات لتشمل مفتاح API
-        async function makeAPIRequest(endpoint, prompt, type = 'simple') {
-            const apiKey = getGeminiKey();
-            const selectedModel = document.getElementById('ai-model-select').value;
-            
-            return fetch(`http://localhost:3000/${endpoint}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ 
-                    prompt: prompt,
-                    type: type,
-                    selectedModel: selectedModel,
-                    apiKey: apiKey
-                })
-            });
-        }
-        
-        // تحميل البيانات عند تحميل الصفحة
-        document.addEventListener('DOMContentLoaded', function() {
-            // التحقق من وجود مفتاح API عند تحميل الصفحة
-            const savedApiKey = getGeminiKey();
-            if (savedApiKey) {
-                document.getElementById('gemini-api-key').style.borderColor = '#28a745';
-                document.getElementById('gemini-api-key').placeholder = 'تم حفظ مفتاح Gemini API ✅';
-            }
-        });
+        // Key management is now handled by the server environment variables.
     </script>
 </body>
 </html>
